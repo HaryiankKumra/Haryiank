@@ -1,11 +1,5 @@
 {
     "version": 2,
-    "builds": [
-      {
-        "src": "Backend/api/contact.js",
-        "use": "@vercel/node"
-      }
-    ],
     "routes": [
       {
         "src": "/api/(.*)",
@@ -13,7 +7,7 @@
       },
       {
         "src": "/(.*)",
-        "dest": "public/index.html"
+        "dest": "/index.html"
       }
     ],
     "headers": [
