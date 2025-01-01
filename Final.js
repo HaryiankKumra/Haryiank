@@ -16,53 +16,6 @@ menuItems.forEach((item) => {
   });
 });
 
-// Hero Video Playback Handling
-document.addEventListener("DOMContentLoaded", () => {
-  const video = document.querySelector("#hero video");
-
-  const enableVideoPlayback = () => {
-    if (video) {
-      video.play().catch((error) => console.error("Error playing video:", error));
-    }
-    document.removeEventListener("click", enableVideoPlayback);
-    document.removeEventListener("keydown", enableVideoPlayback);
-  };
-
-  document.addEventListener("click", enableVideoPlayback);
-  document.addEventListener("keydown", enableVideoPlayback);
-});
-
-// Header Background Change on Scroll
-document.addEventListener("scroll", () => {
-  const scrollPosition = window.scrollY;
-  header.style.backgroundColor = scrollPosition > 250 ? "#29323c" : "transparent";
-});
-
-// Loader Functionality
-function initLoader() {
-  const images = document.querySelectorAll("img");
-  let loadedImages = 0;
-
-  images.forEach((img) => {
-    img.addEventListener("load", () => {
-      loadedImages++;
-      if (loadedImages === images.length) {
-        document.body.classList.add("loaded");
-      }
-    });
-
-    // Handle cached images
-    if (img.complete) {
-      img.dispatchEvent(new Event("load"));
-    }
-  });
-
-  // Fallback timeout
-  setTimeout(() => document.body.classList.add("loaded"), 5000);
-}
-
-document.addEventListener("DOMContentLoaded", initLoader);
-
 // Chatbot Functionality
 const chatbotIcon = document.getElementById("chatbot-icon");
 const chatbotWindow = document.getElementById("chatbot-window");
@@ -76,23 +29,23 @@ chatbotIcon?.addEventListener("click", () => {
 
 const getBotResponse = async (userMessage) => {
   try {
-    const response = await fetch('/api/chatbot', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("http://localhost:3000/api/chatbot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: userMessage }),
     });
 
-    if (!response.ok) throw new Error("Failed to fetch response");
-
     const data = await response.json();
-    return data.reply || "No response available";
+    return data.reply || "Sorry, I couldn't process your request.";
   } catch (error) {
     console.error("Error fetching chatbot response:", error);
-    return "Sorry, I couldn't process your request.";
+    return "An error occurred while communicating with the bot.";
   }
 };
 
-const sendMessage = async () => {
+const sendMessage = async (event) => {
+  event.preventDefault();
+
   const message = userInput.value.trim();
 
   if (message) {
@@ -103,12 +56,19 @@ const sendMessage = async () => {
 
     userInput.value = "";
 
-    const botResponse = await getBotResponse(message);
+    try {
+      const botResponse = await getBotResponse(message);
 
-    const botMessage = document.createElement("div");
-    botMessage.classList.add("message");
-    botMessage.textContent = `Bot: ${botResponse}`;
-    messagesContainer.appendChild(botMessage);
+      const botMessage = document.createElement("div");
+      botMessage.classList.add("message");
+      botMessage.textContent = `Bot: ${botResponse}`;
+      messagesContainer.appendChild(botMessage);
+    } catch (error) {
+      const botError = document.createElement("div");
+      botError.classList.add("message");
+      botError.textContent = "Bot: Sorry, I couldn't understand that.";
+      messagesContainer.appendChild(botError);
+    }
 
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
@@ -116,56 +76,91 @@ const sendMessage = async () => {
 
 sendButton?.addEventListener("click", sendMessage);
 userInput?.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendMessage();
+  if (e.key === "Enter") sendMessage(e);
 });
 
 // Contact Form Submission
-const form = document.querySelector('.form-container');
-form?.addEventListener('submit', async (e) => {
+const contactForm = document.querySelector(".form-container");
+contactForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const formData = {
-    name: document.querySelector('.form-field[placeholder="Full Name"]').value,
-    email: document.querySelector('.form-field[placeholder="Email"]').value,
-    message: document.querySelector('.form-field[placeholder="Type your message..."]').value,
-  };
+  const fullName = document.querySelector('.form-field[placeholder="Full Name"]').value;
+  const email = document.querySelector('.form-field[placeholder="Email"]').value;
+  const message = document.querySelector('.form-field[placeholder="Type your message..."]').value;
+
+  const formData = { name: fullName, email, message };
 
   try {
-    const response = await fetch('/api/contact', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("http://localhost:3000/api/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),
     });
 
-    if (!response.ok) throw new Error(await response.text());
-
-    alert('Your message has been sent successfully!');
-    form.reset();
+    if (response.ok) {
+      alert("Your message has been sent successfully!");
+      contactForm.reset();
+    } else {
+      const error = await response.json();
+      alert(`Error: ${error.message}`);
+    }
   } catch (error) {
-    console.error('Error submitting the form:', error);
-    alert('An error occurred. Please try again.');
+    console.error("Error submitting the form:", error);
+    alert("An error occurred. Please try again later.");
   }
 });
 
-// Projects Slider Functionality
-const projectContainer = document.querySelector(".projects-slider-container");
-document.getElementById("next-btn")?.addEventListener("click", () => {
-  projectContainer.scrollBy({ left: 320, behavior: "smooth" });
-});
-document.getElementById("prev-btn")?.addEventListener("click", () => {
-  projectContainer.scrollBy({ left: -320, behavior: "smooth" });
+// Loader Functionality
+document.addEventListener("DOMContentLoaded", () => {
+  const images = document.querySelectorAll("img");
+  const totalImages = images.length;
+  let loadedImages = 0;
+  const loaderProgress = document.querySelector(".loader-progress");
+
+  images.forEach((img) => {
+    img.addEventListener("load", () => {
+      loadedImages++;
+      const loadProgress = (loadedImages / totalImages) * 100;
+
+      if (loaderProgress) {
+        loaderProgress.style.width = `${loadProgress}%`;
+      }
+
+      if (loadedImages === totalImages) {
+        document.body.classList.add("loaded");
+      }
+    });
+
+    if (img.complete) {
+      img.dispatchEvent(new Event("load"));
+    }
+  });
+
+  setTimeout(() => {
+    document.body.classList.add("loaded");
+  }, 5000); // Maximum wait time of 5 seconds
 });
 
-// Card Slider Functionality
-const cards = document.querySelectorAll(".card");
-const sliderButtons = {
+// Projects Slider Functionality
+document.getElementById("next-btn")?.addEventListener("click", () => {
+  const container = document.querySelector(".projects-slider-container");
+  container.scrollBy({ left: 320, behavior: "smooth" });
+});
+
+document.getElementById("prev-btn")?.addEventListener("click", () => {
+  const container = document.querySelector(".projects-slider-container");
+  container.scrollBy({ left: -320, behavior: "smooth" });
+});
+
+// Slider Functionality
+const buttons = {
   prev: document.querySelector(".btn--left"),
   next: document.querySelector(".btn--right"),
 };
-
+const cards = document.querySelectorAll(".card");
 let currentIndex = 0;
 
-const updateCards = () => {
+function updateCards() {
   cards.forEach((card, index) => {
     card.classList.remove("current--card", "next--card", "previous--card");
 
@@ -177,16 +172,22 @@ const updateCards = () => {
       card.classList.add("previous--card");
     }
   });
-};
+}
 
-sliderButtons.next?.addEventListener("click", () => {
+buttons.next?.addEventListener("click", () => {
   currentIndex = (currentIndex + 1) % cards.length;
   updateCards();
 });
 
-sliderButtons.prev?.addEventListener("click", () => {
+buttons.prev?.addEventListener("click", () => {
   currentIndex = (currentIndex - 1 + cards.length) % cards.length;
   updateCards();
 });
 
-document.addEventListener("DOMContentLoaded", updateCards);
+function initSlider() {
+  updateCards();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initSlider();
+});

@@ -1,74 +1,108 @@
 import express from 'express';
 import cors from 'cors';
-import { connect, Schema, model } from 'mongoose';
+import mongoose from 'mongoose';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import dotenv from 'dotenv'; // Import dotenv only once
+import dotenv from 'dotenv';
+import nodemailer from 'nodemailer';
+import path from 'path';
 
 dotenv.config(); // Load environment variables
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(express.json()); // Parse JSON request bodies
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(process.cwd(), './'))); // Serve static files
 
-// CORS configuration
-app.use(
-  cors({
-    origin: '*', // Allow all origins (can be modified for better security)
-    methods: ['GET', 'POST'], // Allow specific HTTP methods
-    allowedHeaders: ['Content-Type'], // Allow specific headers
-  })
-);
-
-// Connect to MongoDB
-connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => {
-    console.log('Connected to MongoDB successfully!');
-  })
+// MongoDB Connection
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log('Connected to MongoDB successfully!'))
   .catch((error) => {
     console.error('Error connecting to MongoDB:', error);
+    process.exit(1); // Exit process if DB connection fails
   });
 
-// Define schema and model for contact form submissions
-const contactSchema = new Schema({
+// Contact Form Schema
+const contactSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
   message: { type: String, required: true },
   submittedAt: { type: Date, default: Date.now },
 });
 
-const Contact = model('Contact', contactSchema);
+const Contact = mongoose.model('Contact', contactSchema);
 
-// POST endpoint to handle contact form submissions
+// Nodemailer Configuration
+const transporter = nodemailer.createTransport({
+  host: process.env.MAIL_HOST,
+  port: process.env.MAIL_PORT,
+  auth: {
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
+  },
+});
+
+// Verify the transporter
+transporter.verify((error) => {
+  if (error) {
+    console.error('Error verifying mail transporter:', error);
+  } else {
+    console.log('Mail transporter is ready');
+  }
+});
+
+// Routes
+
+// Health Check
+app.get('/', (_req, res) => res.send('Server is running...'));
+
+// Contact Form Submission
 app.post('/api/contact', async (req, res) => {
   const { name, email, message } = req.body;
 
-  // Validate input fields
   if (!name || !email || !message) {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
   try {
-    // Create a new contact form submission and save to the database
     const contact = new Contact({ name, email, message });
     await contact.save();
-    res.status(200).json({ message: 'Form submission saved to database!' });
+
+    // Send email to admin
+    const mailOptions = {
+      from: `${name} <${email}>`,
+      to: process.env.ADMIN_EMAIL, // Ensure the ADMIN_EMAIL is defined in your .env
+      subject: `New Portfolio Message from ${name}`,
+      text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
+    };
+
+    // Log mail options to confirm
+    console.log('Sending email with options:', mailOptions);
+
+    await transporter.sendMail(mailOptions);
+
+    // Auto-reply to sender
+    const autoReplyOptions = {
+      from: `Admin <${process.env.ADMIN_EMAIL}>`,
+      to: email,
+      subject: 'Message Received',
+      text: `Hi ${name},\n\nThank you for your message. I will get back to you soon.\n\nBest regards,\nAdmin`,
+    };
+
+    await transporter.sendMail(autoReplyOptions);
+
+    res.status(200).json({ message: 'Form submitted and email sent successfully!' });
   } catch (error) {
-    console.error('Error saving to database:', error);
-    res.status(500).json({ error: 'Failed to save to database' });
+    console.error('Error handling contact form submission:', error);
+    res.status(500).json({ error: 'Failed to handle form submission' });
   }
 });
 
-// Chatbot API route to handle messages and fetch responses from OpenAI API
-const geminiApiKey = process.env.GEMINI_API_KEY;
-
-// Check if API key is present before starting the server
-if (!geminiApiKey) {
-  console.error('Error: Missing GEMINI_API_KEY environment variable.');
-  process.exit(1);
-}
-
-const genAI = new GoogleGenerativeAI(geminiApiKey);
+// Chatbot Integration
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.post('/api/chatbot', async (req, res) => {
   const { message } = req.body;
@@ -78,27 +112,18 @@ app.post('/api/chatbot', async (req, res) => {
   }
 
   try {
-    // Select a suitable Gemini model for chatbot interactions
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }); // Adjust model name as needed
-
-    const prompt = {
-      // Craft a clear prompt for generating chatbot responses
-      text: `Respond to the user's message in a conversational manner:\n${message}`,
-      // Consider adding additional context or instructions if necessary
-    };
-
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const prompt = { text: `Respond to the user's message: ${message}` };
     const response = await model.generateContent(prompt);
-    const generatedText = response.response.text();
 
-    res.status(200).json({ reply: generatedText });
+    const reply = response?.text || 'Sorry, I could not understand your message.';
+
+    res.status(200).json({ reply });
   } catch (error) {
-    console.error('Error fetching chatbot response:', error);
-    res.status(500).json({ error: 'Failed to process your request' });
+    console.error('Error processing chatbot request:', error);
+    res.status(500).json({ error: 'Failed to process chatbot request' });
   }
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Server listening on port ${port}`));
-// Instead of module.exports = app;
-export default app;
-
+// Start Server
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
