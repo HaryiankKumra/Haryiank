@@ -43,6 +43,8 @@ function initLoader() {
     console.log('Initializing loader...');
     document.body.classList.add('loaded');
   }
+
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 // Chatbot Functionality
 const chatbotIcon = document.getElementById("chatbot-icon");
 const chatbotWindow = document.getElementById("chatbot-window");
@@ -56,7 +58,7 @@ chatbotIcon?.addEventListener("click", () => {
 
 const getBotResponse = async (userMessage) => {
   try {
-    const response = await fetch("http://localhost:3000/api/chatbot", {
+    const response = await fetch(`${backendUrl}/api/chatbot`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: userMessage }),
@@ -118,7 +120,7 @@ contactForm?.addEventListener("submit", async (e) => {
   const formData = { name: fullName, email, message };
 
   try {
-    const response = await fetch("http://localhost:3000/api/contact", {
+    const response = await fetch(`${backendUrl}/api/contact`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),
