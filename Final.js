@@ -16,7 +16,33 @@ menuItems.forEach((item) => {
     mobileMenu.classList.remove("active");
   });
 });
+// Hero Video Playback Handling
+document.addEventListener("DOMContentLoaded", () => {
+  const video = document.querySelector("#hero video");
 
+  const enableVideoPlayback = () => {
+    if (video) {
+      video.play().catch((error) => {
+        console.error("Error playing video:", error);
+      });
+    }
+    document.removeEventListener("click", enableVideoPlayback);
+    document.removeEventListener("keydown", enableVideoPlayback);
+  };
+
+  document.addEventListener("click", enableVideoPlayback);
+  document.addEventListener("keydown", enableVideoPlayback);
+});
+
+// Header Background Change on Scroll
+document.addEventListener("scroll", () => {
+  const scrollPosition = window.scrollY;
+  header.style.backgroundColor = scrollPosition > 250 ? "#29323c" : "transparent";
+});
+function initLoader() {
+    console.log('Initializing loader...');
+    document.body.classList.add('loaded');
+  }
 // Chatbot Functionality
 const chatbotIcon = document.getElementById("chatbot-icon");
 const chatbotWindow = document.getElementById("chatbot-window");
