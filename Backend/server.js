@@ -112,12 +112,13 @@ app.post('/api/chatbot', async (req, res) => {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    const prompt = { text: `Respond to the user's message: ${message}` };
-    const response = await model.generateContent(prompt);
+    console.log('Received message:', message);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const response = await model.generateContent(message); // Just pass the message directly
+    
 
-    const reply = response?.text || 'Sorry, I could not understand your message.';
-
+    const reply = response?.generated_text || 'Sorry, I could not understand your message.';
+    console.log('Generated response:', reply);
     res.status(200).json({ reply });
   } catch (error) {
     console.error('Error processing chatbot request:', error);
