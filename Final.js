@@ -43,8 +43,8 @@ function initLoader() {
     console.log('Initializing loader...');
     document.body.classList.add('loaded');
   }
-
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  const backendUrl='https://portfolio-backend-zeta-orcin.vercel.app';
+ 
 // Chatbot Functionality
 const chatbotIcon = document.getElementById("chatbot-icon");
 const chatbotWindow = document.getElementById("chatbot-window");
