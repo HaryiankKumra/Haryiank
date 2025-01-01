@@ -4,10 +4,11 @@ const mobileMenu = document.querySelector(".nav-list ul");
 const menuItems = document.querySelectorAll(".nav-list ul li a");
 const header = document.querySelector(".header.container");
 
-hamburger?.addEventListener("click", () => {
+hamburger.addEventListener("click", () => {
   hamburger.classList.toggle("active");
   mobileMenu.classList.toggle("active");
 });
+
 
 menuItems.forEach((item) => {
   item.addEventListener("click", () => {
