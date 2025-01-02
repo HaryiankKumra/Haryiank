@@ -9,13 +9,13 @@ hamburger.addEventListener("click", () => {
   mobileMenu.classList.toggle("active");
 });
 
-
 menuItems.forEach((item) => {
   item.addEventListener("click", () => {
     hamburger.classList.remove("active");
     mobileMenu.classList.remove("active");
   });
 });
+
 // Hero Video Playback Handling
 document.addEventListener("DOMContentLoaded", () => {
   const video = document.querySelector("#hero video");
@@ -39,11 +39,13 @@ document.addEventListener("scroll", () => {
   const scrollPosition = window.scrollY;
   header.style.backgroundColor = scrollPosition > 250 ? "#29323c" : "transparent";
 });
+
 function initLoader() {
     console.log('Initializing loader...');
     document.body.classList.add('loaded');
   }
-  const backendUrl = 'https://portfolio-backend-zeta-orcin.vercel.app';
+
+const backendUrl = 'https://portfolio-backend-zeta-orcin.vercel.app';
  
 // Chatbot Functionality
 const chatbotIcon = document.getElementById("chatbot-icon");
@@ -137,6 +139,29 @@ contactForm?.addEventListener("submit", async (e) => {
     console.error("Error submitting the form:", error);
     alert("An error occurred. Please try again later.");
   }
+
+  // Additional fetch call (added as requested)
+  fetch('https://portfolio-backend-zeta-orcin.vercel.app/api/contact', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Add this if your backend expects credentials
+    body: JSON.stringify({
+      name: 'Your Name',
+      email: 'your.email@example.com',
+      message: 'Your message here',
+    }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.statusText}`);
+      }
+      return response.json();
+    })
+    .then((data) => console.log('Success:', data))
+    .catch((error) => console.error('Error:', error));
+  
 });
 
 // Loader Functionality
