@@ -43,7 +43,7 @@ function initLoader() {
     console.log('Initializing loader...');
     document.body.classList.add('loaded');
   }
-  const backendUrl='https://portfolio-backend-zeta-orcin.vercel.app';
+  const backendUrl = 'https://portfolio-backend-zeta-orcin.vercel.app';
  
 // Chatbot Functionality
 const chatbotIcon = document.getElementById("chatbot-icon");
