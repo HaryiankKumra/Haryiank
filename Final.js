@@ -146,12 +146,7 @@ contactForm?.addEventListener("submit", async (e) => {
   headers: {
     'Content-Type': 'application/json',
   },
-  credentials: 'include', // Add this if your backend expects credentials
-  body: JSON.stringify({
-    name: 'Your Name',
-    email: 'your.email@example.com',
-    message: 'Your message here',
-  }),
+  
 })
   .then((response) => {
     if (!response.ok) {
