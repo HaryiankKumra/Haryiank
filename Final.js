@@ -54,25 +54,6 @@ const sendButton = document.getElementById("send-btn");
 const userInput = document.getElementById("user-input");
 const messagesContainer = document.getElementById("messages");
 
-chatbotIcon?.addEventListener("click", () => {
-  chatbotWindow.style.display = chatbotWindow.style.display === "block" ? "none" : "block";
-});
-
-const getBotResponse = async (userMessage) => {
-  try {
-    const response = await fetch(`${backendUrl}/api/chatbot`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: userMessage }),
-    });
-
-    const data = await response.json();
-    return data.reply || "Sorry, I couldn't process your request.";
-  } catch (error) {
-    console.error("Error fetching chatbot response:", error);
-    return "An error occurred while communicating with the bot.";
-  }
-};
 
 const sendMessage = async (event) => {
   event.preventDefault();
@@ -110,10 +91,101 @@ userInput?.addEventListener("keypress", (e) => {
   if (e.key === "Enter") sendMessage(e);
 });
 
-// Contact Form Submission
+// Enhanced Contact Section with 3D Effects
+
+// Add floating shapes to the contact section
+document.addEventListener("DOMContentLoaded", () => {
+  // Create floating shapes container
+  const floatingShapes = document.createElement('div');
+  floatingShapes.className = 'floating-shapes';
+  
+  // Create shapes
+  for (let i = 0; i < 4; i++) {
+    const shape = document.createElement('div');
+    shape.className = 'shape';
+    floatingShapes.appendChild(shape);
+  }
+  
+  // Add to contact section
+  const contactSection = document.getElementById('contact');
+  contactSection.insertBefore(floatingShapes, contactSection.firstChild);
+  
+  // 3D Tilt effect for contact cards
+  const contactCol1 = document.querySelector('#contact .col-1');
+  const contactCol2 = document.querySelector('#contact .col-2');
+  const textCenter = document.querySelector('#contact .text-center');
+  
+  // Mouse move tilt effect
+  contactSection.addEventListener('mousemove', (e) => {
+    const xPos = (e.clientX / window.innerWidth - 0.5) * 10;
+    const yPos = (e.clientY / window.innerHeight - 0.5) * 10;
+    
+    if (contactCol1) {
+      contactCol1.style.transform = `translateZ(20px) rotateY(${-xPos/2}deg) rotateX(${yPos/2}deg)`;
+    }
+    
+    if (contactCol2) {
+      contactCol2.style.transform = `translateZ(20px) rotateY(${xPos/2}deg) rotateX(${-yPos/2}deg)`;
+    }
+    
+    if (textCenter) {
+      textCenter.style.transform = `rotateX(${yPos/3}deg)`;
+    }
+  });
+  
+  // Reset on mouse leave
+  contactSection.addEventListener('mouseleave', () => {
+    if (contactCol1) {
+      contactCol1.style.transform = `translateZ(20px) rotateY(-2deg)`;
+    }
+    
+    if (contactCol2) {
+      contactCol2.style.transform = `translateZ(20px) rotateY(2deg)`;
+    }
+    
+    if (textCenter) {
+      textCenter.style.transform = 'rotateX(0deg)';
+    }
+  });
+  
+  // Enhanced scrolling animation
+  const animateOnScroll = () => {
+    const elements = [
+      contactCol1, 
+      contactCol2, 
+      textCenter,
+      ...document.querySelectorAll('.address-line')
+    ];
+    
+    elements.forEach(el => {
+      if (!el) return;
+      
+      const elementTop = el.getBoundingClientRect().top;
+      const elementVisible = 150;
+      
+      if (elementTop < window.innerHeight - elementVisible) {
+        el.classList.add('visible');
+      }
+    });
+  };
+  
+  window.addEventListener('scroll', animateOnScroll);
+  animateOnScroll(); // Initial check
+});
+
+// Updated Contact Form with 3D animations
 const contactForm = document.querySelector(".form-container");
 contactForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
+
+  // Show animated loader
+  const sendBtn = document.querySelector('.send-btn');
+  const originalBtnText = sendBtn.textContent;
+  sendBtn.innerHTML = '<div class="loader-spinner"></div> Sending...';
+  sendBtn.disabled = true;
+  
+  // Add button animation
+  sendBtn.classList.add('sending');
 
   const fullName = document.querySelector('.form-field[placeholder="Full Name"]').value;
   const email = document.querySelector('.form-field[placeholder="Email"]').value;
@@ -121,7 +193,31 @@ contactForm?.addEventListener("submit", async (e) => {
 
   const formData = { name: fullName, email, message };
 
+  // Create 3D ripple effect on button
+  const createRipple = (e) => {
+    const button = e.currentTarget;
+    const circle = document.createElement('span');
+    const diameter = Math.max(button.clientWidth, button.clientHeight);
+    
+    circle.style.width = circle.style.height = `${diameter}px`;
+    circle.style.left = '0';
+    circle.style.top = '0';
+    circle.classList.add('ripple');
+    
+    const ripple = button.querySelector('.ripple');
+    if (ripple) {
+      ripple.remove();
+    }
+    
+    button.appendChild(circle);
+  };
+  
+  createRipple({ currentTarget: sendBtn });
+
   try {
+    // Simulate loading for demo purposes - remove this setTimeout in production
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
     const response = await fetch(`${backendUrl}/api/contact`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -129,36 +225,120 @@ contactForm?.addEventListener("submit", async (e) => {
     });
 
     if (response.ok) {
-      alert("Your message has been sent successfully!");
-      contactForm.reset();
+      // Success message with 3D effect
+      const successMessage = document.createElement('div');
+      successMessage.classList.add('success-message');
+      successMessage.innerHTML = '<span>✓</span> Message sent successfully!';
+      
+      // Add success message with animation
+      contactForm.appendChild(successMessage);
+      
+      // Reset form with animation
+      const formFields = contactForm.querySelectorAll('.form-field');
+      formFields.forEach((field, index) => {
+        setTimeout(() => {
+          field.classList.add('reset-field');
+          setTimeout(() => {
+            field.value = '';
+            field.classList.remove('reset-field');
+          }, 300);
+        }, index * 100);
+      });
+      
+      // Remove success message after 5 seconds with fade out
+      setTimeout(() => {
+        successMessage.style.opacity = '0';
+        successMessage.style.transform = 'translateY(10px)';
+        setTimeout(() => {
+          successMessage.remove();
+        }, 500);
+      }, 5000);
     } else {
       const error = await response.json();
-      alert(`Error: ${error.message}`);
+      
+      // Error message with 3D effect
+      const errorMessage = document.createElement('div');
+      errorMessage.classList.add('error-message');
+      errorMessage.innerHTML = `<span>✗</span> ${error.message || 'Something went wrong.'}`;
+      
+      // Add error message after form
+      contactForm.appendChild(errorMessage);
+      
+      // Remove error message after 5 seconds
+      setTimeout(() => {
+        errorMessage.style.opacity = '0';
+        errorMessage.style.transform = 'translateY(10px)';
+        setTimeout(() => {
+          errorMessage.remove();
+        }, 500);
+      }, 5000);
     }
   } catch (error) {
     console.error("Error submitting the form:", error);
-    alert("An error occurred. Please try again later.");
+    
+    // Error message for network issues
+    const errorMessage = document.createElement('div');
+    errorMessage.classList.add('error-message');
+    errorMessage.innerHTML = '<span>✗</span> Network error. Please try again later.';
+    
+    // Add error message after form
+    contactForm.appendChild(errorMessage);
+    
+    // Remove error message after 5 seconds
+    setTimeout(() => {
+      errorMessage.style.opacity = '0';
+      errorMessage.style.transform = 'translateY(10px)';
+      setTimeout(() => {
+        errorMessage.remove();
+      }, 500);
+    }, 5000);
+  } finally {
+    // Restore button with animation
+    setTimeout(() => {
+      sendBtn.classList.remove('sending');
+      sendBtn.innerHTML = originalBtnText;
+      sendBtn.disabled = false;
+    }, 800);
   }
-
-  // Additional fetch call (added as requested)
-  fetch('https://portfolio-backend-zeta-orcin.vercel.app/api/contact', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  
-})
-  .then((response) => {
-    if (!response.ok) {
-      throw new Error(`Server error: ${response.statusText}`);
-    }
-    return response.json();
-  })
-  .then((data) => console.log('Success:', data))
-  .catch((error) => console.error('Error:', error));
-
 });
 
+// Add these class definitions to your CSS
+const cssToAdd = `
+.sending {
+  transform: scale(0.95);
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple 0.6s linear;
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.reset-field {
+  transform: translateY(-8px);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.visible {
+  opacity: 1 !important;
+  transform: translateX(0) !important;
+}
+`;
+
+// Add the CSS
+const style = document.createElement('style');
+style.textContent = cssToAdd;
+document.head.appendChild(style);
 // Loader Functionality
 document.addEventListener("DOMContentLoaded", () => {
   const images = document.querySelectorAll("img");
